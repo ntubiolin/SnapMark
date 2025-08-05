@@ -35,6 +35,20 @@ class Config:
                 "azure_api_version": "2024-02-01",
                 "azure_model": "gpt-4-vision"
             },
+            "mcp": {
+                "enabled": False,
+                "config_path": "config/mcp_use_config.json",
+                "servers": {
+                    "excel": {
+                        "enabled": False,
+                        "command": "uvx",
+                        "args": ["excel-mcp-server", "stdio"],
+                        "env": {
+                            "EXCEL_FILES_PATH": "./SnapMarkData/exports"
+                        }
+                    }
+                }
+            },
             "gui": {
                 "system_tray": True,
                 "minimize_to_tray": True,

@@ -99,6 +99,12 @@ snapmark screenshot --region 100,100,800,600
 # Take a screenshot with VLM image description
 snapmark screenshot --vlm
 
+# Take a screenshot and process with MCP servers
+snapmark screenshot --mcp
+
+# Take a screenshot with both VLM and MCP processing
+snapmark screenshot --vlm --mcp
+
 # Search notes
 snapmark search "meeting notes"
 snapmark search "project" --tags work urgent --limit 5
@@ -120,6 +126,15 @@ snapmark vlm path/to/image.png --key-info
 
 # Use custom prompt for image description
 snapmark vlm path/to/image.png --prompt "Describe the user interface elements in this screenshot"
+
+# List configured MCP servers
+snapmark mcp list
+
+# Test MCP server connection
+snapmark mcp test excel
+
+# Process existing image with MCP servers
+snapmark mcp process path/to/image.png --markdown path/to/note.md
 ```
 
 ## Configuration
@@ -148,6 +163,19 @@ SnapMark creates a configuration file at `~/.snapmark2/config.json`:
     "azure_endpoint": "",
     "azure_api_version": "2024-02-01",
     "azure_model": "gpt-4-vision"
+  },
+  "mcp": {
+    "enabled": false,
+    "servers": {
+      "excel": {
+        "enabled": false,
+        "command": "uvx",
+        "args": ["excel-mcp-server", "stdio"],
+        "env": {
+          "EXCEL_FILES_PATH": "./SnapMarkData/exports"
+        }
+      }
+    }
   }
 }
 ```
@@ -220,6 +248,95 @@ SnapMark supports multiple VLM providers for AI-powered image descriptions:
    ```
 
 You can also use the `--vlm` flag with screenshot commands to enable VLM processing temporarily.
+
+#### MCP (Model Context Protocol) Integration
+SnapMark supports MCP servers for post-processing screenshot data. This allows integration with various external tools and services.
+
+##### Setting up MCP Servers
+
+1. **Install MCP dependencies**:
+   ```bash
+   uv add "mcp>=1.0.0"
+   ```
+
+2. **Configure MCP servers** in `~/.snapmark2/config.json`:
+   ```json
+   "mcp": {
+     "enabled": true,
+     "servers": {
+       "excel": {
+         "enabled": true,
+         "command": "uvx",
+         "args": ["excel-mcp-server", "stdio"],
+         "env": {
+           "EXCEL_FILES_PATH": "./SnapMarkData/exports"
+         }
+       },
+       "custom": {
+         "enabled": true,
+         "command": "python",
+         "args": ["path/to/custom_mcp_server.py"],
+         "env": {
+           "CUSTOM_CONFIG": "value"
+         }
+       }
+     }
+   }
+   ```
+
+##### Excel MCP Server Example
+
+1. **Install excel-mcp-server**:
+   ```bash
+   uvx install excel-mcp-server
+   ```
+
+2. **Enable in configuration**:
+   ```json
+   "mcp": {
+     "enabled": true,
+     "servers": {
+       "excel": {
+         "enabled": true,
+         "command": "uvx",
+         "args": ["excel-mcp-server", "stdio"],
+         "env": {
+           "EXCEL_FILES_PATH": "./SnapMarkData/exports"
+         }
+       }
+     }
+   }
+   ```
+
+3. **Create exports directory**:
+   ```bash
+   mkdir -p SnapMarkData/exports
+   ```
+
+##### MCP Usage
+
+**Automatic Processing**: When MCP is enabled, screenshot data is automatically sent to configured servers after OCR and VLM processing.
+
+**Manual Processing**:
+```bash
+# List configured servers
+snapmark mcp list
+
+# Test server connectivity
+snapmark mcp test excel
+
+# Process existing screenshot
+snapmark mcp process screenshot.png --markdown screenshot.md
+```
+
+**CLI Integration**:
+```bash
+# Process screenshot with MCP servers
+snapmark screenshot --mcp
+
+# Combined VLM and MCP processing
+snapmark screenshot --vlm --mcp
+```
 
 ## File Organization
 
@@ -323,6 +440,14 @@ mypy snapmark/
    - **Azure OpenAI**: Verify AZURE_OPENAI_API_KEY and AZURE_OPENAI_ENDPOINT are set
    - Check VLM is enabled in config or use `--vlm` flag
    - Verify the correct provider is configured in config.json
+
+6. **MCP features not working**
+   - Verify MCP is enabled in config: `"mcp": {"enabled": true}`
+   - Check server configurations and paths are correct
+   - Test server connectivity: `snapmark mcp test server_name`
+   - Ensure required MCP server packages are installed (e.g., `uvx install excel-mcp-server`)
+   - Check server environment variables are properly set
+   - Verify server command and arguments are correct
 
 ## License
 

@@ -17,6 +17,7 @@ from .core.ocr import OCRProcessor
 from .core.vlm import VLMProcessor
 from .core.markdown_generator import MarkdownGenerator
 from .core.ai_summary import AISummaryGenerator
+from .core.mcp_client import MCPClient
 from .utils.search import SearchEngine, FileManager
 from .utils.scheduler import TaskScheduler
 
@@ -37,6 +38,7 @@ def create_cli_parser():
     screenshot_parser.add_argument('--region', type=str, help='Screenshot region as x,y,w,h')
     screenshot_parser.add_argument('--output', type=str, help='Output directory')
     screenshot_parser.add_argument('--vlm', action='store_true', help='Use VLM for image description')
+    screenshot_parser.add_argument('--mcp', action='store_true', help='Process with MCP servers')
     
     # Search command
     search_parser = subparsers.add_parser('search', help='Search notes')
@@ -58,6 +60,22 @@ def create_cli_parser():
     vlm_parser.add_argument('--prompt', type=str, help='Custom prompt for image description')
     vlm_parser.add_argument('--action-items', action='store_true', help='Extract action items from image')
     vlm_parser.add_argument('--key-info', action='store_true', help='Extract key information from image')
+    
+    # MCP command
+    mcp_parser = subparsers.add_parser('mcp', help='MCP server management and testing')
+    mcp_subparsers = mcp_parser.add_subparsers(dest='mcp_action', help='MCP actions')
+    
+    # MCP list servers
+    mcp_list_parser = mcp_subparsers.add_parser('list', help='List configured MCP servers')
+    
+    # MCP test server
+    mcp_test_parser = mcp_subparsers.add_parser('test', help='Test MCP server connection')
+    mcp_test_parser.add_argument('server_name', type=str, help='Name of MCP server to test')
+    
+    # MCP process data
+    mcp_process_parser = mcp_subparsers.add_parser('process', help='Process data with MCP servers')
+    mcp_process_parser.add_argument('image_path', type=str, help='Path to image file')
+    mcp_process_parser.add_argument('--markdown', type=str, help='Path to markdown file')
     
     return parser
 
@@ -98,6 +116,33 @@ def cmd_screenshot(args):
         # Index the new note
         search_engine = SearchEngine(args.output or "SnapMarkData")
         search_engine.index_note(md_path)
+        
+        # Process with MCP servers if requested
+        if args.mcp:
+            mcp_client = MCPClient()
+            if mcp_client.is_enabled():
+                print("Processing with MCP servers...")
+                try:
+                    import asyncio
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    mcp_results = loop.run_until_complete(
+                        mcp_client.process_screenshot_data(
+                            image_path, md_path, ocr_text, vlm_description
+                        )
+                    )
+                    loop.close()
+                    
+                    for server_name, result in mcp_results.items():
+                        if "error" in result:
+                            print(f"MCP {server_name}: Error - {result['error']}")
+                        else:
+                            print(f"MCP {server_name}: Success")
+                            
+                except Exception as e:
+                    print(f"MCP processing failed: {e}")
+            else:
+                print("Warning: MCP not enabled or no servers configured")
         
     except Exception as e:
         print(f"Error: {e}")
@@ -198,6 +243,94 @@ def cmd_vlm(args):
         print(f"Error: {e}")
 
 
+def cmd_mcp(args):
+    mcp_client = MCPClient()
+    
+    if args.mcp_action == 'list':
+        servers = mcp_client.list_servers()
+        if not servers:
+            print("No MCP servers configured")
+            return
+        
+        print("Configured MCP servers:")
+        for name in servers:
+            server = mcp_client.servers[name]
+            status = "enabled" if server.enabled else "disabled"
+            print(f"  {name}: {server.command} {' '.join(server.args)} ({status})")
+    
+    elif args.mcp_action == 'test':
+        server_name = args.server_name
+        if server_name not in mcp_client.servers:
+            print(f"Error: Server '{server_name}' not found")
+            return
+        
+        server = mcp_client.servers[server_name]
+        if not server.enabled:
+            print(f"Error: Server '{server_name}' is disabled")
+            return
+        
+        print(f"Testing MCP server: {server_name}")
+        try:
+            # Test with dummy data
+            test_data = {
+                "image_path": "/test/path.png",
+                "markdown_path": "/test/path.md",
+                "ocr_text": "Test OCR text",
+                "vlm_description": "Test VLM description",
+                "timestamp": 1234567890
+            }
+            
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            result = loop.run_until_complete(
+                mcp_client._interact_with_server(server, test_data)
+            )
+            loop.close()
+            
+            print(f"Test successful: {result}")
+            
+        except Exception as e:
+            print(f"Test failed: {e}")
+    
+    elif args.mcp_action == 'process':
+        image_path = args.image_path
+        if not Path(image_path).exists():
+            print(f"Error: Image file not found at {image_path}")
+            return
+        
+        # Load OCR text and VLM description if available
+        ocr = OCRProcessor()
+        ocr_text = ocr.extract_text(image_path)
+        
+        markdown_path = args.markdown or None
+        vlm_description = None
+        
+        print("Processing with MCP servers...")
+        try:
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            mcp_results = loop.run_until_complete(
+                mcp_client.process_screenshot_data(
+                    image_path, markdown_path, ocr_text, vlm_description
+                )
+            )
+            loop.close()
+            
+            print("\nMCP Processing Results:")
+            print("=" * 50)
+            for server_name, result in mcp_results.items():
+                print(f"\n{server_name}:")
+                if "error" in result:
+                    print(f"  Error: {result['error']}")
+                else:
+                    print(f"  Success: {result}")
+                    
+        except Exception as e:
+            print(f"MCP processing failed: {e}")
+
+
 def main():
     parser = create_cli_parser()
     
@@ -245,6 +378,9 @@ def main():
     
     elif args.command == 'vlm':
         cmd_vlm(args)
+    
+    elif args.command == 'mcp':
+        cmd_mcp(args)
     
     else:
         parser.print_help()

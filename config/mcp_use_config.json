@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "excel": {
+      "command": "/Users/linyusheng/.local/bin/excel-mcp-server",
+      "args": ["stdio"],
+      "env": {}
+    }
+  },
+  "global": {
+    "stdio": true
+  }
+}

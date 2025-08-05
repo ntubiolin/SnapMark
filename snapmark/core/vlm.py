@@ -88,7 +88,7 @@ class VLMProcessor:
             return f"Error: Image file not found at {image_path}"
         
         if not prompt:
-            prompt = "Describe this image in detail. Focus on the main content, text if visible, interface elements, and any actionable information."
+            prompt = "Describe this image in detail. Focus on the main content, text if visible, interface elements, and any actionable information. Save the content into excel."
         
         try:
             if self.provider == VLMProvider.OLLAMA:

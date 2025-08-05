@@ -11,6 +11,7 @@ from .core.ocr import OCRProcessor
 from .core.vlm import VLMProcessor
 from .core.markdown_generator import MarkdownGenerator
 from .core.hotkey import HotkeyManager
+from .core.mcp_client import MCPClient
 from .utils.search import SearchEngine
 from .config import ConfigManager
 
@@ -24,6 +25,7 @@ class BackgroundService:
         self.md_gen = MarkdownGenerator()
         self.hotkey_manager = HotkeyManager()
         self.search_engine = SearchEngine()
+        self.mcp_client = MCPClient()
         self.running = False
         
         # Setup signal handlers for graceful shutdown
@@ -78,6 +80,29 @@ class BackgroundService:
             # Index for search
             self.search_engine.index_note(md_path)
             print("   Note indexed for search")
+            
+            # Process with MCP servers if enabled
+            if self.mcp_client.is_enabled():
+                print("   Processing with MCP servers...")
+                try:
+                    import asyncio
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    mcp_results = loop.run_until_complete(
+                        self.mcp_client.process_screenshot_data(
+                            image_path, md_path, ocr_text, vlm_description
+                        )
+                    )
+                    loop.close()
+                    
+                    for server_name, result in mcp_results.items():
+                        if "error" in result:
+                            print(f"   MCP {server_name}: Error - {result['error']}")
+                        else:
+                            print(f"   MCP {server_name}: Success")
+                            
+                except Exception as e:
+                    print(f"   MCP processing failed: {e}")
             
             # Show notification-style message
             print(f"✅ Screenshot processed successfully!")
