@@ -38,6 +38,8 @@ class Config:
             "mcp": {
                 "enabled": False,
                 "config_path": "config/mcp_use_config.json",
+                "timeout": 120.0,
+                "default_prompt": "Analyze this screenshot and extract any relevant data into an Excel workbook with appropriate worksheets and formatting.",
                 "servers": {
                     "excel": {
                         "enabled": False,
@@ -62,14 +64,23 @@ class Config:
         
         self.config = self.load_config()
     
+    def _deep_merge(self, base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+        """Deep merge two dictionaries, with override values taking precedence."""
+        result = base.copy()
+        for key, value in override.items():
+            if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+                result[key] = self._deep_merge(result[key], value)
+            else:
+                result[key] = value
+        return result
+    
     def load_config(self) -> Dict[str, Any]:
         if os.path.exists(self.config_file):
             try:
                 with open(self.config_file, 'r') as f:
                     user_config = json.load(f)
-                # Merge with defaults
-                config = self.defaults.copy()
-                config.update(user_config)
+                # Deep merge with defaults
+                config = self._deep_merge(self.defaults, user_config)
                 return config
             except (json.JSONDecodeError, IOError):
                 pass

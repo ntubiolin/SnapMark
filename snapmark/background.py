@@ -88,9 +88,13 @@ class BackgroundService:
                     import asyncio
                     loop = asyncio.new_event_loop()
                     asyncio.set_event_loop(loop)
+                    
+                    # Get custom prompt from config to trigger mcp-use agent processing
+                    custom_prompt = self.config.get('mcp.default_prompt')
+                    
                     mcp_results = loop.run_until_complete(
                         self.mcp_client.process_screenshot_data(
-                            image_path, md_path, ocr_text, vlm_description
+                            image_path, md_path, ocr_text, vlm_description, custom_prompt
                         )
                     )
                     loop.close()
