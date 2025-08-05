@@ -12,6 +12,7 @@ class MarkdownGenerator:
         self, 
         image_path: str, 
         ocr_text: str, 
+        vlm_description: Optional[str] = None,
         tags: Optional[list] = None,
         title: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None
@@ -30,6 +31,7 @@ class MarkdownGenerator:
             timestamp=timestamp,
             image_path=image_path,
             ocr_text=ocr_text,
+            vlm_description=vlm_description,
             tags=tags or [],
             metadata=metadata or {}
         )
@@ -45,6 +47,7 @@ class MarkdownGenerator:
         timestamp: datetime,
         image_path: Path,
         ocr_text: str,
+        vlm_description: Optional[str],
         tags: list,
         metadata: Dict[str, Any]
     ) -> str:
@@ -64,6 +67,9 @@ class MarkdownGenerator:
                 content += f"- **{key.title()}:** {value}\n"
         
         content += f"\n## Screenshot\n\n![Screenshot]({image_path.name})\n"
+        
+        if vlm_description and vlm_description.strip():
+            content += f"\n## Image Description (VLM)\n\n{vlm_description}\n"
         
         if ocr_text and ocr_text.strip():
             content += f"\n## OCR Text\n\n```\n{ocr_text}\n```\n"

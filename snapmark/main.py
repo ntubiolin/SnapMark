@@ -14,6 +14,7 @@ from .gui.main_window import MainWindow
 from .background import BackgroundService
 from .core.screenshot import ScreenshotCapture
 from .core.ocr import OCRProcessor
+from .core.vlm import VLMProcessor
 from .core.markdown_generator import MarkdownGenerator
 from .core.ai_summary import AISummaryGenerator
 from .utils.search import SearchEngine, FileManager
@@ -35,6 +36,7 @@ def create_cli_parser():
     screenshot_parser = subparsers.add_parser('screenshot', help='Take screenshot')
     screenshot_parser.add_argument('--region', type=str, help='Screenshot region as x,y,w,h')
     screenshot_parser.add_argument('--output', type=str, help='Output directory')
+    screenshot_parser.add_argument('--vlm', action='store_true', help='Use VLM for image description')
     
     # Search command
     search_parser = subparsers.add_parser('search', help='Search notes')
@@ -49,6 +51,13 @@ def create_cli_parser():
     
     # Index command
     index_parser = subparsers.add_parser('index', help='Rebuild search index')
+    
+    # VLM command
+    vlm_parser = subparsers.add_parser('vlm', help='Generate VLM description for existing image')
+    vlm_parser.add_argument('image_path', type=str, help='Path to image file')
+    vlm_parser.add_argument('--prompt', type=str, help='Custom prompt for image description')
+    vlm_parser.add_argument('--action-items', action='store_true', help='Extract action items from image')
+    vlm_parser.add_argument('--key-info', action='store_true', help='Extract key information from image')
     
     return parser
 
@@ -72,7 +81,18 @@ def cmd_screenshot(args):
         print(f"Screenshot saved: {image_path}")
         
         ocr_text = ocr.extract_text(image_path)
-        md_path = md_gen.create_markdown_note(image_path, ocr_text)
+        
+        vlm_description = None
+        if args.vlm:
+            vlm = VLMProcessor()
+            if vlm.is_available():
+                print("Generating image description with VLM...")
+                vlm_description = vlm.describe_image(image_path)
+                print("VLM description generated")
+            else:
+                print("Warning: VLM service not available. Make sure Ollama is running with gemma3n:e4b model.")
+        
+        md_path = md_gen.create_markdown_note(image_path, ocr_text, vlm_description)
         print(f"Markdown note created: {md_path}")
         
         # Index the new note
@@ -144,6 +164,40 @@ def cmd_index(args):
     print("Search index rebuilt successfully.")
 
 
+def cmd_vlm(args):
+    vlm = VLMProcessor()
+    
+    if not vlm.is_available():
+        print("Error: VLM service not available. Make sure Ollama is running with gemma3n:e4b model.")
+        return
+    
+    image_path = args.image_path
+    if not Path(image_path).exists():
+        print(f"Error: Image file not found at {image_path}")
+        return
+    
+    try:
+        if args.action_items:
+            print("Extracting action items from image...")
+            result = vlm.extract_action_items_from_image(image_path)
+        elif args.key_info:
+            print("Extracting key information from image...")
+            result = vlm.extract_key_information(image_path)
+        elif args.prompt:
+            print(f"Generating description with custom prompt...")
+            result = vlm.describe_image(image_path, args.prompt)
+        else:
+            print("Generating image description...")
+            result = vlm.describe_image(image_path)
+        
+        print("\nResult:")
+        print("=" * 50)
+        print(result)
+        
+    except Exception as e:
+        print(f"Error: {e}")
+
+
 def main():
     parser = create_cli_parser()
     
@@ -188,6 +242,9 @@ def main():
     
     elif args.command == 'index':
         cmd_index(args)
+    
+    elif args.command == 'vlm':
+        cmd_vlm(args)
     
     else:
         parser.print_help()

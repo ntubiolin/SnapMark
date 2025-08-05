@@ -8,15 +8,19 @@ from pathlib import Path
 
 from .core.screenshot import ScreenshotCapture
 from .core.ocr import OCRProcessor
+from .core.vlm import VLMProcessor
 from .core.markdown_generator import MarkdownGenerator
 from .core.hotkey import HotkeyManager
 from .utils.search import SearchEngine
+from .config import ConfigManager
 
 
 class BackgroundService:
     def __init__(self):
+        self.config = ConfigManager()
         self.capture = ScreenshotCapture()
         self.ocr = OCRProcessor()
+        self.vlm = VLMProcessor()
         self.md_gen = MarkdownGenerator()
         self.hotkey_manager = HotkeyManager()
         self.search_engine = SearchEngine()
@@ -56,8 +60,19 @@ class BackgroundService:
             ocr_text = self.ocr.extract_text(image_path)
             print(f"   OCR processed: {len(ocr_text)} characters extracted")
             
+            # Process with VLM if enabled and available
+            vlm_description = None
+            config = self.config.config
+            if config.get('vlm', {}).get('enabled', False):
+                if self.vlm.is_available():
+                    print("   Generating VLM description...")
+                    vlm_description = self.vlm.describe_image(image_path)
+                    print(f"   VLM description generated: {len(vlm_description)} characters")
+                else:
+                    print("   VLM enabled but service not available")
+            
             # Generate Markdown
-            md_path = self.md_gen.create_markdown_note(image_path, ocr_text)
+            md_path = self.md_gen.create_markdown_note(image_path, ocr_text, vlm_description)
             print(f"   Markdown created: {Path(md_path).name}")
             
             # Index for search

@@ -23,6 +23,18 @@ class Config:
                 "weekly_day": "sunday",
                 "weekly_time": "19:00"
             },
+            "vlm": {
+                "enabled": False,
+                "provider": "ollama",
+                "model": "gemma3n:e4b",
+                "api_url": "http://localhost:11434",
+                "openai_api_key": "",
+                "openai_model": "gpt-4-vision-preview",
+                "azure_api_key": "",
+                "azure_endpoint": "",
+                "azure_api_version": "2024-02-01",
+                "azure_model": "gpt-4-vision"
+            },
             "gui": {
                 "system_tray": True,
                 "minimize_to_tray": True,
@@ -90,6 +102,9 @@ class Config:
     def get_openai_key(self) -> str:
         return os.getenv('OPENAI_API_KEY', '')
 
+
+# Alias for backwards compatibility
+ConfigManager = Config
 
 # Global config instance
 config = Config()
