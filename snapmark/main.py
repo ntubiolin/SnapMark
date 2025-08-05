@@ -4,13 +4,18 @@ import os
 import argparse
 from pathlib import Path
 
-# macOS compatibility - must be set before importing PyQt5
+# macOS compatibility - must be set before importing PyQt
 if sys.platform == 'darwin':
     os.environ['QT_MAC_WANTS_LAYER'] = '1'
 
-from PyQt5.QtWidgets import QApplication
-
-from .gui.main_window import MainWindow
+try:
+    from PyQt6.QtWidgets import QApplication
+    from .gui.enhanced_window import EnhancedMainWindow as MainWindow
+    PYQT_VERSION = 6
+except ImportError:
+    from PyQt5.QtWidgets import QApplication
+    from .gui.main_window import MainWindow
+    PYQT_VERSION = 5
 from .background import BackgroundService
 from .core.screenshot import ScreenshotCapture
 from .core.ocr import OCRProcessor
@@ -28,6 +33,10 @@ def create_cli_parser():
     
     # GUI command
     gui_parser = subparsers.add_parser('gui', help='Launch GUI application')
+    gui_parser.add_argument('--streamlit', action='store_true', help='Use Streamlit interface instead of PyQt')
+    
+    # Streamlit command
+    streamlit_parser = subparsers.add_parser('streamlit', help='Launch Streamlit web interface')
     
     # Background service command
     bg_parser = subparsers.add_parser('background', help='Run background service with global hotkeys only')
@@ -331,6 +340,57 @@ def cmd_mcp(args):
             print(f"MCP processing failed: {e}")
 
 
+def cmd_streamlit(args):
+    """Launch Streamlit web interface with background service"""
+    import subprocess
+    import sys
+    import threading
+    import time
+    
+    # Get the path to the streamlit app
+    app_path = Path(__file__).parent / "gui" / "streamlit_app.py"
+    
+    def start_background_service():
+        """Start the background service for global hotkeys"""
+        try:
+            time.sleep(2)  # Wait for Streamlit to start
+            print("Starting background service for global hotkeys...")
+            from .background import BackgroundService
+            
+            # Create background service in thread mode (no signal handlers)
+            service = BackgroundService(thread_mode=True)
+            service.start()
+                
+        except Exception as e:
+            print(f"Background service error: {e}")
+    
+    try:
+        # Set PYTHONPATH to include project root
+        env = os.environ.copy()
+        project_root = Path(__file__).parent.parent
+        env['PYTHONPATH'] = str(project_root) + (os.pathsep + env.get('PYTHONPATH', ''))
+        
+        # Start background service in a separate thread
+        bg_thread = threading.Thread(target=start_background_service, daemon=True)
+        bg_thread.start()
+        
+        print("Starting Streamlit web interface...")
+        print("Background service will handle global hotkeys (Cmd+Shift+3)")
+        print("Streamlit will be available at: http://localhost:8501")
+        
+        # Launch streamlit
+        subprocess.run([
+            sys.executable, "-m", "streamlit", "run", 
+            str(app_path),
+            "--server.headless", "false",
+            "--server.port", "8501"
+        ], env=env)
+    except KeyboardInterrupt:
+        print("\nStreamlit app stopped.")
+    except Exception as e:
+        print(f"Error launching Streamlit app: {e}")
+
+
 def main():
     parser = create_cli_parser()
     
@@ -342,18 +402,29 @@ def main():
         window = MainWindow()
         window.show()
         
-        sys.exit(app.exec_())
+        if PYQT_VERSION == 6:
+            sys.exit(app.exec())
+        else:
+            sys.exit(app.exec_())
     
     args = parser.parse_args()
     
     if args.command == 'gui' or args.command is None:
-        app = QApplication(sys.argv)
-        app.setQuitOnLastWindowClosed(False)
-        
-        window = MainWindow()
-        window.show()
-        
-        sys.exit(app.exec_())
+        if hasattr(args, 'streamlit') and args.streamlit:
+            # Launch Streamlit interface
+            cmd_streamlit(args)
+        else:
+            # Launch PyQt interface
+            app = QApplication(sys.argv)
+            app.setQuitOnLastWindowClosed(False)
+            
+            window = MainWindow()
+            window.show()
+            
+            if PYQT_VERSION == 6:
+                sys.exit(app.exec())
+            else:
+                sys.exit(app.exec_())
     
     elif args.command == 'background':
         service = BackgroundService()
@@ -381,6 +452,9 @@ def main():
     
     elif args.command == 'mcp':
         cmd_mcp(args)
+    
+    elif args.command == 'streamlit':
+        cmd_streamlit(args)
     
     else:
         parser.print_help()

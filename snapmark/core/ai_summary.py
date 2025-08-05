@@ -1,16 +1,54 @@
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import List, Optional
-import openai
+from typing import List, Optional, Dict, Any
+from .ai_chat import AIChat
 
 
 class AISummaryGenerator:
     def __init__(self, api_key: Optional[str] = None):
-        self.client = openai.OpenAI(
-            api_key=api_key or os.getenv('OPENAI_API_KEY')
-        )
+        # Use AIChat for unified AI interface
+        self.ai_chat = None
         
+    def generate_custom_summary(self, notes: List[str], prompt: str, model: str = "gpt-4o-mini", days: int = 1) -> str:
+        """Generate a custom summary based on user prompt"""
+        if not notes:
+            return "No notes found for summary generation."
+            
+        if not self.ai_chat:
+            # Initialize with specified model
+            provider = None
+            if model.startswith(("gpt", "o1")):
+                provider = "openai"
+            elif model.startswith("claude"):
+                provider = "claude"
+            elif model.startswith("gemini"):
+                provider = "gemini"
+            else:
+                provider = "ollama"
+                
+            self.ai_chat = AIChat(provider=provider, model=model)
+            
+        combined_content = "\n\n---\n\n".join(notes)
+        
+        full_prompt = f"""
+{prompt}
+
+以下是過去 {days} 天的截圖筆記內容：
+
+{combined_content}
+"""
+        
+        try:
+            response = self.ai_chat.send_message(full_prompt)
+            return response
+        except Exception as e:
+            return f"生成摘要時發生錯誤: {str(e)}"
+            
+    def generate_summary_with_prompt(self, notes: List[str], custom_prompt: str) -> str:
+        """Generate summary with custom prompt - wrapper for generate_custom_summary"""
+        return self.generate_custom_summary(notes, custom_prompt)
+            
     def generate_daily_summary(self, notes: List[str], date: Optional[datetime] = None) -> str:
         if not notes:
             return "No notes found for summary generation."
@@ -34,18 +72,12 @@ Please provide:
 Keep the summary concise but informative, focusing on the most relevant content.
 """
         
+        if not self.ai_chat:
+            self.ai_chat = AIChat(provider="openai", model="gpt-3.5-turbo")
+        
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant that summarizes screenshot notes and OCR content."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=500,
-                temperature=0.7
-            )
-            
-            return response.choices[0].message.content.strip()
+            response = self.ai_chat.send_message(prompt)
+            return response
         except Exception as e:
             return f"Error generating summary: {str(e)}"
     
@@ -64,18 +96,12 @@ OCR Text:
 Provide a brief, clear summary of the main points and any actionable information.
 """
         
+        if not self.ai_chat:
+            self.ai_chat = AIChat(provider="openai", model="gpt-3.5-turbo")
+        
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant that summarizes OCR text from screenshots."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=200,
-                temperature=0.7
-            )
-            
-            return response.choices[0].message.content.strip()
+            response = self.ai_chat.send_message(prompt)
+            return response
         except Exception as e:
             return f"Error generating summary: {str(e)}"
     
@@ -88,21 +114,15 @@ Extract any action items, tasks, or to-dos from the following text:
 Return only the action items as a simple list, one item per line. If no action items are found, return "No action items found."
 """
         
+        if not self.ai_chat:
+            self.ai_chat = AIChat(provider="openai", model="gpt-3.5-turbo")
+        
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant that identifies action items and tasks from text."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=300,
-                temperature=0.5
-            )
+            response = self.ai_chat.send_message(prompt)
             
-            result = response.choices[0].message.content.strip()
-            if "No action items found" in result:
+            if "No action items found" in response:
                 return []
             
-            return [item.strip().lstrip('- ') for item in result.split('\n') if item.strip()]
+            return [item.strip().lstrip('- ') for item in response.split('\n') if item.strip()]
         except Exception as e:
             return [f"Error extracting action items: {str(e)}"]

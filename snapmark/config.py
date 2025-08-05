@@ -126,6 +126,10 @@ class Config:
     
     def get_openai_key(self) -> str:
         return os.getenv('OPENAI_API_KEY', '')
+        
+    def get_snapmark_dir(self) -> Path:
+        """Get the SnapMark data directory"""
+        return Path(self.get_output_dir())
 
 
 # Alias for backwards compatibility

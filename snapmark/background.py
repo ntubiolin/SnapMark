@@ -18,7 +18,7 @@ from .config import ConfigManager
 
 
 class BackgroundService:
-    def __init__(self):
+    def __init__(self, thread_mode=False):
         # Configure logging to show MCP initialization details
         logging.basicConfig(
             level=logging.INFO,
@@ -35,10 +35,12 @@ class BackgroundService:
         self.search_engine = SearchEngine()
         self.mcp_client = MCPClient()
         self.running = False
+        self.thread_mode = thread_mode
         
-        # Setup signal handlers for graceful shutdown
-        signal.signal(signal.SIGINT, self._signal_handler)
-        signal.signal(signal.SIGTERM, self._signal_handler)
+        # Setup signal handlers for graceful shutdown (only in main thread)
+        if not thread_mode:
+            signal.signal(signal.SIGINT, self._signal_handler)
+            signal.signal(signal.SIGTERM, self._signal_handler)
     
     def _signal_handler(self, signum, frame):
         print(f"\nReceived signal {signum}, shutting down...")
@@ -128,8 +130,9 @@ class BackgroundService:
     
     def start(self):
         """Start the background service."""
-        print("🚀 Starting SnapMark Background Service")
-        print("=" * 50)
+        if not self.thread_mode:
+            print("🚀 Starting SnapMark Background Service")
+            print("=" * 50)
         
         if not self.setup_hotkeys():
             return False
@@ -137,16 +140,18 @@ class BackgroundService:
         self.running = True
         self.hotkey_manager.start_listening()
         
-        print("📱 Service running in background...")
-        print("   Press Ctrl+C to stop")
-        print("   Use global hotkeys to take screenshots")
+        if not self.thread_mode:
+            print("📱 Service running in background...")
+            print("   Press Ctrl+C to stop")
+            print("   Use global hotkeys to take screenshots")
         
         try:
             # Keep the service running
             while self.running:
                 time.sleep(1)
         except KeyboardInterrupt:
-            self.stop()
+            if not self.thread_mode:
+                self.stop()
         
         return True
     

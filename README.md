@@ -1,18 +1,27 @@
 # SnapMark 🚀
 
-A powerful desktop screenshot tool with OCR and Markdown generation capabilities. Built with Python and PyQt5.
+A powerful desktop screenshot tool with OCR, AI chat, and Markdown generation capabilities. Built with Python and features both PyQt6 and Streamlit interfaces.
 
 ## Features
 
+### Core Features
 - 📸 **Screenshot Capture**: Hotkey-triggered screenshots (Cmd+Shift+3)
 - 🔍 **OCR Processing**: Automatic text extraction from screenshots using Tesseract
 - 🖼️ **VLM Image Description**: AI-powered image descriptions using Vision Language Models (optional)
 - 📝 **Markdown Generation**: Auto-creates organized notes with timestamps and metadata
-- 🤖 **AI Summaries**: Generate daily/weekly summaries using OpenAI (optional)
-- 🔍 **Advanced Search**: Full-text search with tags and date filtering
-- 🖥️ **Modern GUI**: Clean PyQt5 interface with system tray support
 - 📁 **Smart Organization**: Automatic file organization by date
 - ⌨️ **CLI Support**: Command-line interface for all functions
+
+### Enhanced UI Features
+- 🤖 **AI Chat Interface**: Interactive chat with AI models (GPT, Claude, Gemini, Ollama)
+- 🖼️ **Screenshot Display**: Visual display of captured screenshots with annotation support
+- 🔴 **Red Box Annotation**: Click and drag to add red boxes for highlighting important areas
+- 📋 **Copy to Clipboard**: Copy screenshots (with annotations) directly to clipboard
+- ⚙️ **Model Selection**: Choose from multiple AI models (GPT-4, Claude, Gemini, etc.)
+- 📂 **Path Configuration**: Customizable output directory for screenshots and notes
+- 📄 **Summary Reports**: Generate comprehensive reports from multiple notes with custom prompts
+- 🖥️ **Dual Interface**: Choose between PyQt6 desktop app or Streamlit web interface
+- 🔍 **Advanced Search**: Full-text search with tags and date filtering
 
 ## Installation
 
@@ -58,15 +67,70 @@ pip install -e .
 
 ## Usage
 
-### GUI Mode (Default)
+### GUI Interfaces
+
+SnapMark offers two modern interface options:
+
+#### PyQt6 Desktop GUI (Default)
+
+The PyQt6 GUI provides a native desktop experience:
 
 ```bash
-# Launch the GUI application
+# Launch the PyQt6 desktop GUI (default)
 snapmark
 
 # Or explicitly
 snapmark gui
 ```
+
+#### Streamlit Web Interface
+
+The Streamlit interface provides a modern web-based experience:
+
+```bash
+# Launch the Streamlit web interface
+snapmark streamlit
+
+# Or use the GUI command with --streamlit flag
+snapmark gui --streamlit
+```
+
+The Streamlit interface will be available at `http://localhost:8501` in your web browser.
+
+#### Key UI Components (Both Interfaces):
+
+1. **Left Panel - AI Chat Interface**:
+   - Interactive chat with multiple AI models
+   - Supports text and image inputs
+   - Conversation history maintained during session
+   - Context-aware responses with OCR and VLM data
+
+2. **Right Panel - Screenshot Display & Controls**:
+   - Visual display of captured screenshots
+   - Red box annotation tool for highlighting
+   - Copy to clipboard functionality
+   - Screenshot capture button
+
+3. **Settings Panel**:
+   - **Model Selection**: Choose from GPT-4, Claude, Gemini, and other models
+   - **Path Configuration**: Set custom output directory for screenshots and markdown
+   - **Summary Generation**: Create reports with custom prompts from multiple notes
+   - **Hotkey Configuration**: Enable/disable global hotkeys
+
+#### AI Models Supported:
+- **OpenAI**: gpt-4o, gpt-4o-mini, o1-preview, o1-mini
+- **Anthropic**: claude-3-5-sonnet-20241022, claude-3-5-haiku-20241022
+- **Google**: gemini-1.5-pro, gemini-1.5-flash
+- **Ollama**: Local models (requires Ollama installation)
+
+#### Usage Workflow:
+1. Launch either PyQt6 desktop GUI or Streamlit web interface
+2. Press **Cmd+Shift+3** (or use the capture button) to take a screenshot
+3. Screenshot appears in the right panel automatically with OCR text extracted
+4. Chat with AI about the screenshot in the left panel (AI can see OCR and image description)
+5. Use annotation tools to highlight important areas with red frames
+6. Copy annotated screenshot to clipboard if needed
+7. Generate summary reports from multiple screenshots using custom prompts
 
 ### Background Service
 
@@ -182,11 +246,55 @@ SnapMark creates a configuration file at `~/.snapmark2/config.json`:
 
 ### AI Features (Optional)
 
-#### OpenAI Summaries
-To enable AI summaries, set your OpenAI API key:
+#### AI Chat & Summaries
+To enable AI chat and summary features, configure the appropriate API keys:
 
+##### OpenAI Models
 ```bash
 export OPENAI_API_KEY="your-api-key-here"
+```
+
+##### Anthropic Claude Models
+```bash
+export ANTHROPIC_API_KEY="your-api-key-here"
+```
+
+##### Google Gemini Models
+```bash
+export GOOGLE_API_KEY="your-api-key-here"
+```
+
+##### Azure OpenAI Models
+```bash
+export AZURE_OPENAI_API_KEY="your-api-key-here"
+export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com/"
+```
+
+You can also configure these in the `~/.snapmark2/config.json` file:
+
+```json
+{
+  "ai_chat": {
+    "openai_api_key": "your-openai-key",
+    "claude_api_key": "your-claude-key", 
+    "gemini_api_key": "your-gemini-key",
+    "azure_api_key": "your-azure-key",
+    "azure_endpoint": "https://your-resource.openai.azure.com/",
+    "azure_api_version": "2024-02-01"
+  }
+}
+```
+
+**Note**: If you already have OpenAI API keys configured for VLM features under the `vlm` section, the AI chat will automatically use those keys as a fallback:
+
+```json
+{
+  "vlm": {
+    "openai_api_key": "your-openai-key",
+    "azure_api_key": "your-azure-key",
+    "azure_endpoint": "https://your-resource.openai.azure.com/"
+  }
+}
 ```
 
 #### VLM Image Descriptions

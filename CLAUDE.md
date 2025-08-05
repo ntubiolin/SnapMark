@@ -2,3 +2,4 @@
 2. if there are feature change, update the readme
 3. follow conventional commit rules: type(scope): description (e.g., feat: add OpenAI support, fix: resolve VLM initialization bug)
 4. the config.json is located at `~/.snapmark2/config.json`
+5. when testing command `uv run snapmark gui` set timeout to 180 sec. 
