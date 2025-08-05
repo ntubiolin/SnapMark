@@ -4,6 +4,11 @@
       "command": "/Users/linyusheng/.local/bin/excel-mcp-server",
       "args": ["stdio"],
       "env": {}
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-filesystem", "/Users/linyusheng/projects/SnapMark2"],
+      "env": {}
     }
   },
   "global": {
