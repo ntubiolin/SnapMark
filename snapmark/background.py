@@ -4,6 +4,7 @@
 import sys
 import signal
 import time
+import logging
 from pathlib import Path
 
 from .core.screenshot import ScreenshotCapture
@@ -18,6 +19,13 @@ from .config import ConfigManager
 
 class BackgroundService:
     def __init__(self):
+        # Configure logging to show MCP initialization details
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(levelname)s:%(name)s:%(message)s',
+            force=True  # Override any existing logging configuration
+        )
+        
         self.config = ConfigManager()
         self.capture = ScreenshotCapture()
         self.ocr = OCRProcessor()

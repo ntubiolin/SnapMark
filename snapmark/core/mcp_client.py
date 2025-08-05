@@ -13,9 +13,16 @@ try:
     from langchain_openai import ChatOpenAI
     MCP_USE_AVAILABLE = True
     MCP_USE_IMPORT_ERROR = None
+    # Import our custom filtered agent
+    try:
+        from .mcp_agent_wrapper import FilteredMCPAgent
+        FILTERED_AGENT_AVAILABLE = True
+    except ImportError:
+        FILTERED_AGENT_AVAILABLE = False
 except ImportError as e:
     MCP_USE_AVAILABLE = False
     MCP_USE_IMPORT_ERROR = str(e)
+    FILTERED_AGENT_AVAILABLE = False
 
 
 @dataclass
@@ -134,13 +141,24 @@ class MCPClient:
                     # Add session options with configurable timeout to handle rate limiting
                     timeout = config.get('mcp.timeout', 120.0)
                     session_options = {"timeout": timeout}
-                    self.mcp_agent = MCPAgent(
-                        llm=llm, 
-                        client=self.mcp_use_client, 
-                        max_steps=5,
-                        # session_options=session_options
-                    )
-                    self.logger.info(f"✅ Successfully initialized mcp-use client and agent with {timeout}s timeout")
+                    
+                    # Use FilteredMCPAgent if available, otherwise fallback to regular MCPAgent
+                    if FILTERED_AGENT_AVAILABLE:
+                        self.mcp_agent = FilteredMCPAgent(
+                            llm=llm, 
+                            client=self.mcp_use_client, 
+                            max_steps=30,
+                            # session_options=session_options
+                        )
+                        self.logger.info(f"✅ Successfully initialized mcp-use client with FilteredMCPAgent (image filtering enabled) with {timeout}s timeout")
+                    else:
+                        self.mcp_agent = MCPAgent(
+                            llm=llm, 
+                            client=self.mcp_use_client, 
+                            max_steps=30,
+                            # session_options=session_options
+                        )
+                        self.logger.info(f"✅ Successfully initialized mcp-use client and standard agent with {timeout}s timeout")
                 else:
                     self.logger.info("⚠️  No mcp-use config file found, using basic initialization")
             else:
