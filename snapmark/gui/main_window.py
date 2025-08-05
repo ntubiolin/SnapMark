@@ -52,7 +52,7 @@ class MainWindow(QMainWindow):
         self.setup_hotkeys()
         
     def init_ui(self):
-        self.setWindowTitle("SnapMark2 - Screenshot & OCR Tool")
+        self.setWindowTitle("SnapMark - Screenshot & OCR Tool")
         self.setGeometry(100, 100, 1000, 700)
         
         central_widget = QWidget()
@@ -171,7 +171,7 @@ class MainWindow(QMainWindow):
         
         if self.tray_icon.isVisible():
             self.tray_icon.showMessage(
-                "SnapMark2",
+                "SnapMark",
                 "Screenshot captured and processed!",
                 QSystemTrayIcon.Information,
                 2000
@@ -221,7 +221,7 @@ class MainWindow(QMainWindow):
             event.ignore()
             # Show tray message when minimizing
             self.tray_icon.showMessage(
-                "SnapMark2",
+                "SnapMark",
                 "Application minimized to tray. Global hotkeys remain active.",
                 QSystemTrayIcon.Information,
                 3000

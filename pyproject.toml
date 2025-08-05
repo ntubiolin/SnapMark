@@ -1,5 +1,5 @@
 [project]
-name = "snapmark2"
+name = "snapmark"
 version = "0.1.0"
 description = "Desktop screenshot tool with OCR and Markdown generation"
 authors = [{name = "User", email = "user@example.com"}]

@@ -1,4 +1,4 @@
-# SnapMark2 🚀
+# SnapMark 🚀
 
 A powerful desktop screenshot tool with OCR and Markdown generation capabilities. Built with Python and PyQt5.
 
@@ -42,12 +42,12 @@ A powerful desktop screenshot tool with OCR and Markdown generation capabilities
    - **OpenAI** (Cloud, Paid): Requires API key
    - **Azure OpenAI** (Cloud, Paid): Requires API key and endpoint
 
-### Install SnapMark2
+### Install SnapMark
 
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd SnapMark2
+cd SnapMark
 
 # Install with uv (recommended)
 uv sync
@@ -124,7 +124,7 @@ snapmark vlm path/to/image.png --prompt "Describe the user interface elements in
 
 ## Configuration
 
-SnapMark2 creates a configuration file at `~/.snapmark2/config.json`:
+SnapMark creates a configuration file at `~/.snapmark2/config.json`:
 
 ```json
 {
@@ -162,7 +162,7 @@ export OPENAI_API_KEY="your-api-key-here"
 ```
 
 #### VLM Image Descriptions
-SnapMark2 supports multiple VLM providers for AI-powered image descriptions:
+SnapMark supports multiple VLM providers for AI-powered image descriptions:
 
 ##### Option 1: Ollama (Local, Free)
 1. Install and start Ollama:

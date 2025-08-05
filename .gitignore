@@ -65,7 +65,7 @@ venv.bak/
 ehthumbs.db
 Thumbs.db
 
-# SnapMark2 specific
+# SnapMark specific
 SnapMarkData/
 .snapmark2/
 *.log

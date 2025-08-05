@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Background service for SnapMark2 with global hotkeys only."""
+"""Background service for SnapMark with global hotkeys only."""
 
 import sys
 import signal
@@ -91,7 +91,7 @@ class BackgroundService:
     
     def start(self):
         """Start the background service."""
-        print("🚀 Starting SnapMark2 Background Service")
+        print("🚀 Starting SnapMark Background Service")
         print("=" * 50)
         
         if not self.setup_hotkeys():

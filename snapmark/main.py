@@ -22,7 +22,7 @@ from .utils.scheduler import TaskScheduler
 
 
 def create_cli_parser():
-    parser = argparse.ArgumentParser(description="SnapMark2 - Screenshot & OCR Tool")
+    parser = argparse.ArgumentParser(description="SnapMark - Screenshot & OCR Tool")
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
     
     # GUI command
