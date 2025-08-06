@@ -26,10 +26,11 @@ class Config:
             "vlm": {
                 "enabled": False,
                 "provider": "ollama",
-                "model": "gemma3n:e4b",
+                "model": "llama3.2-vision",
+                "ollama_model": "llama3.2-vision",
                 "api_url": "http://localhost:11434",
                 "openai_api_key": "",
-                "openai_model": "gpt-4-vision-preview",
+                "openai_model": "gpt-4o",
                 "azure_api_key": "",
                 "azure_endpoint": "",
                 "azure_api_version": "2024-02-01",

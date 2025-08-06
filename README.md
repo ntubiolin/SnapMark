@@ -45,10 +45,12 @@ A powerful desktop screenshot tool with OCR, AI chat, and Markdown generation ca
    - **Ollama** (Local, Free):
      ```bash
      # Install Ollama from https://ollama.ai
-     # Then install the Gemma 3n model
-     ollama pull gemma3n:e4b
+     # Then install vision models like Llama 3.2 Vision
+     ollama pull llama3.2-vision
+     # Or other vision models
+     ollama pull llava
      ```
-   - **OpenAI** (Cloud, Paid): Requires API key
+   - **OpenAI** (Cloud, Paid): Supports GPT-4o and other vision models
    - **Azure OpenAI** (Cloud, Paid): Requires API key and endpoint
 
 ### Install SnapMark
@@ -219,10 +221,11 @@ SnapMark creates a configuration file at `~/.snapmark2/config.json`:
   "vlm": {
     "enabled": false,
     "provider": "ollama",
-    "model": "gemma3n:e4b",
+    "model": "llama3.2-vision",
+    "ollama_model": "llama3.2-vision",
     "api_url": "http://localhost:11434",
     "openai_api_key": "",
-    "openai_model": "gpt-4-vision-preview",
+    "openai_model": "gpt-4o",
     "azure_api_key": "",
     "azure_endpoint": "",
     "azure_api_version": "2024-02-01",
@@ -307,9 +310,14 @@ SnapMark supports multiple VLM providers for AI-powered image descriptions:
    ollama serve
    ```
 
-2. Install the Gemma 3n model:
+2. Install vision models:
    ```bash
-   ollama pull gemma3n:e4b
+   # Llama 3.2 Vision (recommended)
+   ollama pull llama3.2-vision
+   
+   # Or other vision models
+   ollama pull llava
+   ollama pull gemma2:2b
    ```
 
 3. Configure in `~/.snapmark2/config.json`:
@@ -317,7 +325,7 @@ SnapMark supports multiple VLM providers for AI-powered image descriptions:
    "vlm": {
      "enabled": true,
      "provider": "ollama",
-     "model": "gemma3n:e4b",
+     "ollama_model": "llama3.2-vision",
      "api_url": "http://localhost:11434"
    }
    ```
@@ -333,7 +341,7 @@ SnapMark supports multiple VLM providers for AI-powered image descriptions:
    "vlm": {
      "enabled": true,
      "provider": "openai",
-     "openai_model": "gpt-4-vision-preview"
+     "openai_model": "gpt-4o"  # or "gpt-4o-mini", "gpt-4-turbo"
    }
    ```
 
@@ -356,6 +364,26 @@ SnapMark supports multiple VLM providers for AI-powered image descriptions:
    ```
 
 You can also use the `--vlm` flag with screenshot commands to enable VLM processing temporarily.
+
+##### Switching Between VLM Providers
+
+SnapMark provides a convenient utility to switch between VLM providers:
+
+```bash
+# Check current VLM status
+uv run python -m snapmark.utils.vlm_config status
+
+# Switch to OpenAI with GPT-4o
+uv run python -m snapmark.utils.vlm_config switch openai gpt-4o
+
+# Switch to Ollama with Llama 3.2 Vision
+uv run python -m snapmark.utils.vlm_config switch ollama llama3.2-vision
+
+# Test VLM providers
+uv run python test_vlm_providers.py
+```
+
+The test script will verify both OpenAI and Ollama configurations and provide setup instructions.
 
 #### MCP (Model Context Protocol) Integration
 SnapMark supports MCP servers for post-processing screenshot data. This allows integration with various external tools and services.
@@ -392,7 +420,25 @@ SnapMark supports MCP servers for post-processing screenshot data. This allows i
    }
    ```
 
-3. **Configure LLM for intelligent MCP processing** (supports OpenAI or Ollama):
+3. **Configure LLM for intelligent MCP processing** (supports both OpenAI and Ollama):
+   
+   For OpenAI:
+   ```json
+   "vlm": {
+     "provider": "openai",
+     "openai_api_key": "your-api-key",
+     "openai_model": "gpt-4o"
+   }
+   ```
+   
+   For Ollama:
+   ```json
+   "vlm": {
+     "provider": "ollama",
+     "ollama_model": "llama3.2",
+     "api_url": "http://localhost:11434"
+   }
+   ```
    
    **Option A: OpenAI**
    ```json

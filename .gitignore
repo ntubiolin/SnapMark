@@ -84,3 +84,5 @@ tmp/
 # Configuration with sensitive data
 config_local.json
 .env.local
+
+*.xlsx

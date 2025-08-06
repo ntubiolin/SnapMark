@@ -23,7 +23,16 @@ class VLMProcessor:
         
         self.provider = VLMProvider(provider or config.get('vlm.provider', 'ollama'))
         self.api_url = (api_url or config.get('vlm.api_url', 'http://localhost:11434')).rstrip('/')
-        self.model = model or config.get('vlm.model', 'gemma3n:e4b')
+        
+        # Set model based on provider
+        if self.provider == VLMProvider.OLLAMA:
+            self.model = model or config.get('vlm.ollama_model', config.get('vlm.model', 'llama3.2-vision'))
+        elif self.provider == VLMProvider.OPENAI:
+            self.model = model or config.get('vlm.openai_model', 'gpt-4o')
+        elif self.provider == VLMProvider.AZURE_OPENAI:
+            self.model = model or config.get('vlm.azure_model', 'gpt-4-vision')
+        else:
+            self.model = model or config.get('vlm.model', 'llama3.2-vision')
         
         # Initialize clients based on provider
         self.openai_client = None
@@ -45,9 +54,6 @@ class VLMProcessor:
                 raise ValueError("OpenAI API key not found. Set OPENAI_API_KEY environment variable or configure in vlm.openai_api_key")
             
             self.openai_client = OpenAI(api_key=api_key)
-            # Default to gpt-4-vision-preview if not specified
-            if self.model == 'gemma3n:e4b':  # Default ollama model
-                self.model = config.get('vlm.openai_model', 'gpt-4-vision-preview')
                 
         except ImportError:
             raise ImportError("OpenAI package not installed. Run: uv add openai")
@@ -70,9 +76,6 @@ class VLMProcessor:
                 azure_endpoint=endpoint,
                 api_version=api_version
             )
-            # Default to gpt-4-vision deployment
-            if self.model == 'gemma3n:e4b':  # Default ollama model
-                self.model = config.get('vlm.azure_model', 'gpt-4-vision')
                 
         except ImportError:
             raise ImportError("OpenAI package not installed. Run: uv add openai")
@@ -262,3 +265,29 @@ class VLMProcessor:
             return False
         except:
             return False
+    
+    def get_provider_info(self) -> Dict[str, Any]:
+        """Get information about the current provider and model"""
+        return {
+            "provider": self.provider.value,
+            "model": self.model,
+            "api_url": self.api_url if self.provider == VLMProvider.OLLAMA else None,
+            "available": self.is_available()
+        }
+    
+    @classmethod
+    def list_available_models(cls, provider: str = "ollama", api_url: str = None) -> list:
+        """List available models for a given provider"""
+        if provider == "ollama":
+            try:
+                url = (api_url or "http://localhost:11434").rstrip('/')
+                response = requests.get(f"{url}/api/tags", timeout=5)
+                if response.status_code == 200:
+                    tags = response.json()
+                    return [model["name"] for model in tags.get("models", [])]
+            except:
+                pass
+        elif provider == "openai":
+            # Common OpenAI vision models
+            return ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4-vision-preview"]
+        return []

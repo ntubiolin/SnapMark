@@ -130,17 +130,20 @@ class MCPClient:
             if vlm_config.get('provider') == 'openai' and vlm_config.get('openai_api_key'):
                 # Initialize OpenAI LLM
                 llm = ChatOpenAI(
-                    model=vlm_config.get('openai_model', vlm_config.get('model', 'gpt-4')),
+                    model=vlm_config.get('openai_model', 'gpt-4o'),
                     api_key=vlm_config.get('openai_api_key'),
                     temperature=0.3
                 )
+                self.logger.info(f"Initialized OpenAI LLM with model: {vlm_config.get('openai_model', 'gpt-4o')}")
             elif vlm_config.get('provider') == 'ollama':
-                # Initialize Ollama LLM
+                # Initialize Ollama LLM - use ollama_model if set, otherwise fall back to model
+                ollama_model = vlm_config.get('ollama_model', vlm_config.get('model', 'llama3.2'))
                 llm = ChatOllama(
-                    model=vlm_config.get('ollama_model', vlm_config.get('model', 'llama3.2-vision')),
-                    base_url=vlm_config.get('ollama_base_url', 'http://localhost:11434'),
+                    model=ollama_model,
+                    base_url=vlm_config.get('api_url', 'http://localhost:11434'),
                     temperature=0.3
                 )
+                self.logger.info(f"Initialized Ollama LLM with model: {ollama_model}")
             
             if llm:
                 
