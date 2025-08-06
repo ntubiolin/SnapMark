@@ -11,6 +11,7 @@ from dataclasses import dataclass
 try:
     from mcp_use import MCPAgent, MCPClient as MCPUseClient
     from langchain_openai import ChatOpenAI
+    from langchain_ollama import ChatOllama
     MCP_USE_AVAILABLE = True
     MCP_USE_IMPORT_ERROR = None
     # Import our custom filtered agent
@@ -121,16 +122,27 @@ class MCPClient:
             from .mcp_requirements import log_mcp_status
             log_mcp_status()
             
-            # Check if we have OpenAI configuration for LLM
+            # Check if we have OpenAI or Ollama configuration for LLM
             from ..config import config
-            openai_config = config.get('vlm', {})
-            if openai_config.get('provider') == 'openai' and openai_config.get('openai_api_key'):
+            vlm_config = config.get('vlm', {})
+            llm = None
+            
+            if vlm_config.get('provider') == 'openai' and vlm_config.get('openai_api_key'):
                 # Initialize OpenAI LLM
                 llm = ChatOpenAI(
-                    model=openai_config.get('openai_model', openai_config.get('model', 'gpt-4')),
-                    api_key=openai_config.get('openai_api_key'),
+                    model=vlm_config.get('openai_model', vlm_config.get('model', 'gpt-4')),
+                    api_key=vlm_config.get('openai_api_key'),
                     temperature=0.3
                 )
+            elif vlm_config.get('provider') == 'ollama':
+                # Initialize Ollama LLM
+                llm = ChatOllama(
+                    model=vlm_config.get('ollama_model', vlm_config.get('model', 'llama3.2-vision')),
+                    base_url=vlm_config.get('ollama_base_url', 'http://localhost:11434'),
+                    temperature=0.3
+                )
+            
+            if llm:
                 
                 # Get MCP config path from main config
                 mcp_config_path = config.get('mcp.config_path', 'config/mcp_use_config.json')
@@ -162,7 +174,7 @@ class MCPClient:
                 else:
                     self.logger.info("⚠️  No mcp-use config file found, using basic initialization")
             else:
-                self.logger.info("⚠️  OpenAI not configured, mcp-use features limited")
+                self.logger.info("⚠️  Neither OpenAI nor Ollama configured, mcp-use features limited")
                 
         except Exception as e:
             self.logger.error(f"❌ Failed to initialize mcp-use: {e}")

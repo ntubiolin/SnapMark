@@ -121,7 +121,7 @@ class VLMProcessor:
                 f"{self.api_url}/api/generate",
                 json=payload,
                 headers={"Content-Type": "application/json"},
-                timeout=30
+                timeout=120  # Increased timeout for vision models
             )
             
             if response.status_code == 200:
@@ -239,7 +239,21 @@ class VLMProcessor:
                 if response.status_code == 200:
                     tags = response.json()
                     models = [model["name"] for model in tags.get("models", [])]
-                    return self.model in models
+                    # Check for exact match or with :latest tag
+                    model_name = self.model
+                    if model_name in models:
+                        return True
+                    # Check if model exists with :latest tag
+                    if f"{model_name}:latest" in models:
+                        # Update the model name to include the tag for API calls
+                        self.model = f"{model_name}:latest"
+                        return True
+                    # Check if model without tag exists when we have a tag
+                    if ":" in model_name:
+                        base_model = model_name.split(":")[0]
+                        if base_model in models:
+                            return True
+                    return False
                 return False
             elif self.provider == VLMProvider.OPENAI:
                 return self.openai_client is not None

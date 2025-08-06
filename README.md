@@ -392,6 +392,31 @@ SnapMark supports MCP servers for post-processing screenshot data. This allows i
    }
    ```
 
+3. **Configure LLM for intelligent MCP processing** (supports OpenAI or Ollama):
+   
+   **Option A: OpenAI**
+   ```json
+   "vlm": {
+     "provider": "openai",
+     "openai_api_key": "your-openai-key",
+     "openai_model": "gpt-4"
+   }
+   ```
+   
+   **Option B: Ollama (Local)**
+   ```json
+   "vlm": {
+     "provider": "ollama",
+     "ollama_model": "llama3.2-vision",
+     "ollama_base_url": "http://localhost:11434"
+   }
+   ```
+   
+   Note: For Ollama, ensure the model is pulled first:
+   ```bash
+   ollama pull llama3.2-vision
+   ```
+
 ##### Excel MCP Server Example
 
 1. **Install excel-mcp-server**:
